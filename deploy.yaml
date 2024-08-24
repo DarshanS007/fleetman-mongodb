@@ -1,3 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: cloud-ssd
+provisioner: ebs.csi.aws.com
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  type: gp2
+---    
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,7 +16,7 @@ spec:
     matchLabels:
       app: mongodb
   replicas: 1
-  template: # template for the pods
+  template: 
     metadata:
       labels:
         app: mongodb
@@ -20,37 +29,20 @@ spec:
             mountPath: /data/db
       volumes:
         - name: mongo-persistent-storage
-          # pointer to the configuration of HOW we want the mount to be implemented
           persistentVolumeClaim:
             claimName: mongo-pvc
 ---
-# What do want?
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mongo-pvc
 spec:
-  storageClassName: mylocalstorage
+  storageClassName: cloud-ssd
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 2Gi
----
-# How do we want it implemented
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: local-storage
-spec:
-  storageClassName: mylocalstorage
-  capacity:
-    storage: 2Gi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/mnt/mongodb/"
-    type: DirectoryOrCreate
+      storage: 10Gi
 ---
 kind: Service
 apiVersion: v1
